@@ -1,0 +1,16 @@
+This is a mod which enables remote debugging of Minecraft scripts using Chrome's DevTools.
+
+
+How to compile this for the Linux launcher:
+1. Download Android NDK
+2. Create a directory for mod development, eg. ~/moddev/ and `cd` into it
+3. Clone the sources:
+`git clone https://github.com/MCMrARM/mod-ndk-gnustl.git`
+`git clone https://github.com/MCMrARM/scriptdebugger.git`
+4. `cd scriptdebugger` then
+```
+mkdir build && cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=PATH_TO_NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=x86 -DANDROID_STL=none -DLIBMINECRAFTPE_PATH=~/.local/share/mcpelauncher/versions/1.10.0.3/libs/libminecraftpe.so ..
+```
+The command above assumes you have downloaded Minecraft 1.10.0.3 using the Linux launcher.
+5. Copy the resulting `libsdebugger.so` file (found in scriptdebugger/build) and `libgnustl_shared.so` (found in mod-ndk-gnustl/x86) to `~/.local/share/mcpelauncher/mods/`
