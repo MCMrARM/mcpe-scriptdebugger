@@ -1,6 +1,8 @@
 #include "InspectorManager.h"
-#include "InspectorWebSocketChannel.h"
-#include "InspectorWebSocketManager.h"
+#include "InspectorWebSocketSession.h"
+#include "Listener.h"
+
+using namespace InspectorServer;
 
 void InspectorManager::init(v8::Isolate *isolate, v8::Local<v8::Context> context) {
     if (inspector)
@@ -11,22 +13,30 @@ void InspectorManager::init(v8::Isolate *isolate, v8::Local<v8::Context> context
     inspector->contextCreated(v8_inspector::V8ContextInfo(context, 1, name));
 }
 
-void InspectorManager::onConnectionOpened(InspectorWebSocketChannel &channel) {
+void InspectorManager::onConnectionOpened(InspectorWebSocketSession &channel) {
     channel.setSession(inspector->connect(1, &channel, v8_inspector::StringView()));
     channel.setPostMessageCallback([this]() {
         std::lock_guard<std::mutex> lck2 (runMessageLoopMutex);
         runMessageLoopCv.notify_all();
     });
+    channel.setCloseCallback([this, &channel]() {
+        onConnectionClosed(channel);
+    });
     {
-        std::lock_guard<std::mutex> lck(runMessageLoopMutex);
-        channels[channel.getConnection().get()] = &channel;
+        std::lock_guard<std::mutex> lck(channelsMutex);
+        channels.insert(&channel);
     }
 }
 
+void InspectorManager::onConnectionClosed(InspectorServer::InspectorWebSocketSession &channel) {
+    std::lock_guard<std::mutex> lck(channelsMutex);
+    channels.erase(&channel);
+}
+
 void InspectorManager::update() {
-    std::lock_guard<std::mutex> lck (runMessageLoopMutex);
+    std::lock_guard<std::mutex> lck (channelsMutex);
     for (auto const& channel : channels)
-        channel.second->update();
+        channel->update();
 }
 
 
@@ -37,7 +47,7 @@ void InspectorManager::runMessageLoopOnPause(int contextGroupId) {
         {
             std::lock_guard<std::mutex> lck2(channelsMutex);
             for (auto const &channel : channels)
-                channel.second->update();
+                channel->update();
         }
         if (runMessageLoopBool)
             runMessageLoopCv.wait(lck);

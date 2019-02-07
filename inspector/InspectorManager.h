@@ -1,18 +1,19 @@
 #pragma once
 
-#include "WebSockets.h"
 #include <v8-inspector.h>
+#include <mutex>
+#include <condition_variable>
+#include <set>
 
-class InspectorWebSocketChannel;
-class InspectorWebSocketManager;
+namespace InspectorServer {
+
+class InspectorWebSocketSession;
 
 class InspectorManager : protected v8_inspector::V8InspectorClient {
 
 private:
-    using WsServer = SimpleWeb::SocketServer<SimpleWeb::WS>;
-
     std::unique_ptr<v8_inspector::V8Inspector> inspector;
-    std::map<WsServer::Connection*, InspectorWebSocketChannel*> channels;
+    std::set<InspectorWebSocketSession*> channels;
     std::mutex channelsMutex;
 
 
@@ -34,6 +35,10 @@ public:
     void update();
 
 
-    void onConnectionOpened(InspectorWebSocketChannel& channel);
+    void onConnectionOpened(InspectorWebSocketSession& channel);
+
+    void onConnectionClosed(InspectorWebSocketSession& channel);
 
 };
+
+}

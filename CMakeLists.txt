@@ -7,10 +7,9 @@ include(../mod-ndk-gnustl/CMakeLists.txt)
 
 set(CMAKE_CXX_STANDARD 14)
 
-include(dep/asio.cmake)
-include(dep/websocket.cmake)
+include(dep/boost.cmake)
 include(dep/v8.cmake)
 
-add_library(sdebugger SHARED main.cpp inspector/InspectorManager.cpp inspector/InspectorManager.h inspector/WebSockets.h minecraft/Crypto.h minecraft/Util.h inspector/InspectorWebSocketChannel.cpp inspector/InspectorWebSocketChannel.h inspector/String16.h inspector/InspectorWebSocketManager.cpp inspector/InspectorWebSocketManager.h)
+add_library(sdebugger SHARED main.cpp inspector/InspectorManager.cpp inspector/InspectorManager.h minecraft/Crypto.h minecraft/Util.h inspector/InspectorWebSocketSession.cpp inspector/InspectorWebSocketSession.h inspector/String16.h inspector/Listener.cpp inspector/Listener.h inspector/HttpSession.cpp inspector/HttpSession.h inspector/WebSocketSession.cpp inspector/WebSocketSession.h inspector/HttpSessionHandler.h inspector/InspectorServer.cpp inspector/InspectorServer.h)
 target_link_libraries(sdebugger ${LIBMINECRAFTPE_PATH})
-target_link_libraries(sdebugger asio websocket v8)
+target_link_libraries(sdebugger boost v8)
