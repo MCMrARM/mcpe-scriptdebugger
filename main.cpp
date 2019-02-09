@@ -102,6 +102,12 @@ extern "C" void mod_init() {
     *((size_t*) &s[1]) = (size_t) replacementStr;
     s[5] = 0x90;
     s[7] = (unsigned char) strlen(replacementStr);
+    s =  &((unsigned char*) sym)[0x8B];
+    s[0] = 0xB8;
+    replacementStr = "\r\n})()";
+    *((size_t*) &s[1]) = (size_t) replacementStr;
+    s[5] = 0x90;
+    s[7] = (unsigned char) strlen(replacementStr);
 
     inspectorServer.start(4242);
 }
