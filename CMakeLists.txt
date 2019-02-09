@@ -5,6 +5,8 @@ set(LIBMINECRAFTPE_PATH "" CACHE FILEPATH "Path to libminecraftpe.so to link aga
 
 include(../mod-ndk-gnustl/CMakeLists.txt)
 
+add_definitions(-DBOOST_ASIO_DISABLE_EVENTFD)
+
 set(CMAKE_CXX_STANDARD 14)
 
 include(dep/boost.cmake)
