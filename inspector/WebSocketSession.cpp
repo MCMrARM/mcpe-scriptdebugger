@@ -1,4 +1,5 @@
 #include "WebSocketSession.h"
+#include "../Log.h"
 
 namespace beast = boost::beast;
 
@@ -6,7 +7,7 @@ using namespace InspectorServer;
 
 void WebSocketSession::onAccept(boost::beast::error_code ec) {
     if (ec) {
-        printf("WebSocketSession::onAccept: error\n");
+        Log::trace("WebSocketSession", "onAccept: error %s", ec.message().c_str());
         return;
     }
     ws.async_read(buffer, std::bind(&WebSocketSession::onRead, shared_from_this(),
@@ -15,7 +16,7 @@ void WebSocketSession::onAccept(boost::beast::error_code ec) {
 
 void WebSocketSession::onRead(boost::beast::error_code ec, std::size_t) {
     if (ec) {
-        printf("WebSocketSession::onRead: error %s\n", ec.message().c_str());
+        Log::trace("WebSocketSession", "onRead: error %s", ec.message().c_str());
         return;
     }
     onMessageReceived(beast::buffers_to_string(buffer.data()));
@@ -27,7 +28,7 @@ void WebSocketSession::onRead(boost::beast::error_code ec, std::size_t) {
 
 void WebSocketSession::onWrite(boost::beast::error_code ec, std::size_t) {
     if (ec) {
-        printf("WebSocketSession::onWrite: error %s\n", ec.message().c_str());
+        Log::trace("WebSocketSession", "onWrite: error %s", ec.message().c_str());
         return;
     }
     std::lock_guard<std::mutex> lk (sendQueueMutex);

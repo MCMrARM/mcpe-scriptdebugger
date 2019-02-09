@@ -2,6 +2,8 @@
 
 #include "InspectorManager.h"
 
+#include "../Log.h"
+
 namespace asio = boost::asio;
 namespace beast = boost::beast;
 
@@ -20,7 +22,7 @@ void Listener::start(unsigned short port) {
     auto guard = boost::asio::make_work_guard(ioContext);
     ioThread = std::thread([this]() {
         ioContext.run();
-        printf("Exited IOContext\n");
+        Log::trace("Listener", "Exited IOContext");
     });
 
 
@@ -36,14 +38,14 @@ void Listener::start(unsigned short port) {
     tcpAcceptor.listen(10, ec);
     if (ec)
         abort();
-    printf("Started on port %i\n", (int) port);
+    Log::info("Listener", "Started on port %i", port);
     doAccept();
 }
 
 void Listener::doAccept() {
     tcpAcceptor.async_accept(tcpSocket, [this](beast::error_code ec) {
         if (ec) {
-            printf("Listener::doAccept: error\n");
+            Log::trace("Listener", "doAccept: error %s", ec.message().c_str());
             return;
         }
         std::make_shared<HttpSession>(std::move(tcpSocket), httpSessionHandler)->run();

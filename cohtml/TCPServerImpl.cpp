@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "../Log.h"
+
 TCPServerImpl::TCPServerImpl(cohtml::server::TCPListener &listener) : listener(listener) {
 }
 
@@ -43,7 +45,7 @@ void TCPServerImpl::Update() {
                 abort();
             }
         } else {
-            printf("[Cohtml TcpServerImpl] Connection opened (%i)\n", fd);
+            Log::trace("CohtmlTcpServerImpl", "Connection opened (%i)", fd);
             listener.OnConnectionAccepted(fd);
             fcntl(fd, F_SETFL, O_NONBLOCK);
             clients.insert(fd);
@@ -51,11 +53,11 @@ void TCPServerImpl::Update() {
     }
     char buf[1024 * 16];
     for (int fd : clients) {
-        int n = read(fd, buf, sizeof(buf));
+        ssize_t n = read(fd, buf, sizeof(buf));
         if (n < 0) {
             if (errno == EAGAIN)
                 continue;
-            printf("[Cohtml TcpServerImpl] Connection dropped (%i)\n", fd);
+            Log::trace("CohtmlTcpServerImpl", "Connection dropped (%i)", fd);
             listener.OnConnectionFailed(fd);
             clients.erase(fd);
             continue;

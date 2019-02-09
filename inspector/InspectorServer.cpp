@@ -3,6 +3,7 @@
 #include "InspectorWebSocketSession.h"
 #include "../extra/StdPolyfills.h"
 #include <nlohmann/json.hpp>
+#include "../Log.h"
 
 namespace beast = boost::beast;
 
@@ -15,7 +16,7 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
     auto url = req.target();
     if (url.ends_with('/'))
         url.remove_suffix(1);
-    printf("Request: %s %s\n", url.to_string().c_str(), req.method_string().to_string().c_str());
+    Log::trace("InspectorServer", "Request: %s %s", url.to_string().c_str(), req.method_string().to_string().c_str());
     if (url.starts_with("/inspector/") && beast::websocket::is_upgrade(req)) {
         auto name = url.substr(sizeof("/inspector/") - 1);
         std::lock_guard<std::mutex> lck(inspectorManagersMutex);
@@ -30,7 +31,7 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
             session.sendResponse(res);
             return;
         }
-        printf("Accepted inspector for %s\n", name.to_string().c_str());
+        Log::trace("InspectorServer", "Accepted inspector for %s", name.to_string().c_str());
         auto wsSession = std::make_shared<InspectorWebSocketSession>(std::move(session.getSocket()));
         inspector->second->onConnectionOpened(*wsSession);
         wsSession->run(req);

@@ -5,6 +5,7 @@
 #include "minecraft/Keyboard.h"
 
 extern "C" void* mcpelauncher_hook(void* symbol, void* hook, void** original) { return nullptr; }
+extern "C" void mcpelauncher_vlog(mcpelauncher_log_level level, const char* tag, const char* text, va_list args) {}
 
 MinecraftGame* minecraftGame;
 

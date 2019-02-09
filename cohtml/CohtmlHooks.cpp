@@ -8,6 +8,7 @@
 #include "../main.h"
 #include "../minecraft/MinecraftGame.h"
 #include "../minecraft/FilePathManager.h"
+#include "../Log.h"
 
 struct DynamicLibraryLoader {
     void* handle;
@@ -57,7 +58,7 @@ struct ResourceData {
 static std::map<std::string, ResourceData> contents;
 
 extern "C" bool GetResourceData(const char* name, void const*& res, size_t& resSize) {
-    printf("GetResourceData %s\n", name);
+    Log::trace("CohtmlDebug", "GetResourceData %s", name);
     std::string fullpath = minecraftGame->getFilePathManager().getRootPath() + name;
     auto el = contents.find(fullpath);
     if (el == contents.end()) {
@@ -69,7 +70,7 @@ extern "C" bool GetResourceData(const char* name, void const*& res, size_t& resS
             fseek(fd, 0, SEEK_SET);
             newResData.data = malloc(newResData.dataSize);
             if (fread(newResData.data, newResData.dataSize, 1, fd) != 1) {
-                printf("GetResourceData %s: Failed to read file\n", name);
+                Log::error("CohtmlDebug", "GetResourceData %s: Failed to read file", name);
                 free(newResData.data);
                 newResData.data = nullptr;
             }

@@ -1,5 +1,6 @@
 #include "HttpSession.h"
 #include "HttpSessionHandler.h"
+#include "../Log.h"
 
 namespace asio = boost::asio;
 namespace beast = boost::beast;
@@ -18,7 +19,7 @@ void HttpSession::onRead(boost::beast::error_code ec, std::size_t) {
         return;
     }
     if (ec) {
-        printf("HttpSession::onRead error\n");
+        Log::trace("HttpSession", "onRead: error %s", ec.message().c_str());
         return;
     }
     handler.onRequest(*this, req);
@@ -26,7 +27,7 @@ void HttpSession::onRead(boost::beast::error_code ec, std::size_t) {
 
 void HttpSession::onWrite(boost::beast::error_code ec, bool close) {
     if (ec) {
-        printf("HttpSession::onWrite error\n");
+        Log::trace("HttpSession", "onWrite: error %s", ec.message().c_str());
         return;
     }
     if (close) {

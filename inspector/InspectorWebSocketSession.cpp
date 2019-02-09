@@ -1,5 +1,6 @@
 #include "InspectorWebSocketSession.h"
 #include "String16.h"
+#include "../Log.h"
 
 using namespace InspectorServer;
 
@@ -11,7 +12,7 @@ void InspectorWebSocketSession::update() {
         queue.clear();
     }
     for (std::string const& str : q) {
-        printf("[InspectorWebSocketSession] Got command: %s\n", str.c_str());
+        Log::trace("InspectorWebSocketSession", "Receive: %s", str.c_str());
         session->dispatchProtocolMessage(v8_inspector::StringView((unsigned char *) str.data(), str.size()));
     }
 }
@@ -19,12 +20,12 @@ void InspectorWebSocketSession::update() {
 void InspectorWebSocketSession::sendInspectorMessage(const v8_inspector::StringView &msg) {
     if (msg.is8Bit()) {
         std::string str((char *) msg.characters8(), msg.length());
-        printf("[InspectorWebSocketSession] Send: %s[%li]\n", str.c_str(), str.size());
+        Log::trace("InspectorWebSocketSession", "Send: %s", str.c_str());
         sendMessage(std::string((char *) msg.characters8(), msg.length()));
     } else {
         v8_inspector::String16 str16 = v8_inspector::toString16(msg);
         std::string str = str16.utf8();
-        printf("[InspectorWebSocketSession] Send: %s[%li]\n", str.c_str(), str.size());
+        Log::trace("InspectorWebSocketSession", "Send: %s", str.c_str());
         sendMessage(str);
     }
 }
