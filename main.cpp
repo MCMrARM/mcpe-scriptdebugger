@@ -53,6 +53,13 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface10initializeERNS_12ScriptRepor
     else
         inspectorServer.addInspector("client", &inspectorManager);
 }
+TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface8shutdownERNS_12ScriptReportE, ScriptApi::V8CoreInterface, void* report) {
+    {
+        v8::HandleScope handleScope (isolate);
+        inspectorManager.finalize(isolate, context.Get(isolate));
+    }
+    original(this, report);
+}
 TInstanceHook(void, _ZN12ScriptEngine6updateEv, ScriptEngine) {
     original(this);
     core->inspectorManager.update();
