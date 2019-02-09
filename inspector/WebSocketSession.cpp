@@ -15,7 +15,7 @@ void WebSocketSession::onAccept(boost::beast::error_code ec) {
 
 void WebSocketSession::onRead(boost::beast::error_code ec, std::size_t) {
     if (ec) {
-        printf("WebSocketSession::onRead: error\n");
+        printf("WebSocketSession::onRead: error %s\n", ec.message().c_str());
         return;
     }
     onMessageReceived(beast::buffers_to_string(buffer.data()));
@@ -27,7 +27,7 @@ void WebSocketSession::onRead(boost::beast::error_code ec, std::size_t) {
 
 void WebSocketSession::onWrite(boost::beast::error_code ec, std::size_t) {
     if (ec) {
-        printf("WebSocketSession::onWrite: error\n");
+        printf("WebSocketSession::onWrite: error %s\n", ec.message().c_str());
         return;
     }
     std::lock_guard<std::mutex> lk (sendQueueMutex);

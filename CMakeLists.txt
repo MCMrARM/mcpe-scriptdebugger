@@ -9,7 +9,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 include(dep/boost.cmake)
 include(dep/v8.cmake)
+include(dep/json.cmake)
 
-add_library(sdebugger SHARED main.cpp inspector/InspectorManager.cpp inspector/InspectorManager.h minecraft/Crypto.h minecraft/Util.h inspector/InspectorWebSocketSession.cpp inspector/InspectorWebSocketSession.h inspector/String16.h inspector/Listener.cpp inspector/Listener.h inspector/HttpSession.cpp inspector/HttpSession.h inspector/WebSocketSession.cpp inspector/WebSocketSession.h inspector/HttpSessionHandler.h inspector/InspectorServer.cpp inspector/InspectorServer.h)
+add_library(sdebugger SHARED main.cpp inspector/InspectorManager.cpp inspector/InspectorManager.h minecraft/Crypto.h minecraft/Util.h inspector/InspectorWebSocketSession.cpp inspector/InspectorWebSocketSession.h inspector/String16.h inspector/Listener.cpp inspector/Listener.h inspector/HttpSession.cpp inspector/HttpSession.h inspector/WebSocketSession.cpp inspector/WebSocketSession.h inspector/HttpSessionHandler.h inspector/InspectorServer.cpp inspector/InspectorServer.h extra/StdPolyfills.h extra/StdPolyfills.cpp)
 target_link_libraries(sdebugger ${LIBMINECRAFTPE_PATH})
-target_link_libraries(sdebugger boost v8)
+target_link_libraries(sdebugger boost v8 nlohmann_json)

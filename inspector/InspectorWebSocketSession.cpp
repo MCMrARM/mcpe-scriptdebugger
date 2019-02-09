@@ -14,6 +14,8 @@ void InspectorWebSocketSession::update() {
         printf("[InspectorWebSocketSession] Got command: %s\n", str.c_str());
         session->dispatchProtocolMessage(v8_inspector::StringView((unsigned char *) str.data(), str.size()));
     }
+//    auto cmd = R"({"id":10000,"method":"Debugger.setBreakpointsActive","params":{"active":true}})";
+//    session->dispatchProtocolMessage(v8_inspector::StringView((unsigned char *) cmd, strlen(cmd)));
 }
 
 void InspectorWebSocketSession::sendInspectorMessage(const v8_inspector::StringView &msg) {

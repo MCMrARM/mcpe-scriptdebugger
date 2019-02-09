@@ -12,6 +12,7 @@ class InspectorServer : public HttpSessionHandler {
 
 private:
     Listener listener;
+    unsigned short port;
 
     std::mutex inspectorManagersMutex;
     std::map<std::string, InspectorManager*> inspectorManagers;
@@ -26,6 +27,7 @@ public:
     void removeInspector(std::string const &name);
 
     void start(unsigned short port) {
+        this->port = port;
         listener.start(port);
     }
 
