@@ -29,7 +29,9 @@ protected:
     virtual void onMessageReceived(std::string const& data) = 0;
 
 public:
-    explicit WebSocketSession(tcp::socket s) : ws(std::move(s)) {}
+    explicit WebSocketSession(tcp::socket s) : ws(std::move(s)) {
+        ws.auto_fragment(false);
+    }
 
     template <typename Body, typename Allocator>
     void run(boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> req) {
