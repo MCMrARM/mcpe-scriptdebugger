@@ -65,6 +65,30 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
         res.keep_alive(req.keep_alive());
         res.body() = val.dump();
         session.sendResponse(res);
+    } else if (url == "") {
+        std::stringstream body;
+        body << "<!doctype html><html><head><title>Minecraft Script Engine Debugger</title></head><body>";
+        body << "<h1>Minecraft Script Engine</h1>";
+        body << "<ul>";
+        {
+            std::lock_guard<std::mutex> lck(inspectorManagersMutex);
+            for (auto const& inspector : inspectorManagers) {
+                std::string wsUrl = "127.0.0.1:" + std::to_string(port) + "/inspector/" + inspector.first;
+                std::string devtoolsUrlBase = "chrome-devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=";
+                body << "<li>" << devtoolsUrlBase << "<strong>" << wsUrl << "</strong>" << "</li>";
+            }
+            if (inspectorManagers.empty())
+                body << "<li>No scripts are loaded</li>";
+        }
+        body << "</ul>";
+        body << "</body></html>";
+
+        beast::http::response<beast::http::string_body> res{beast::http::status::ok, req.version()};
+        res.set(beast::http::field::server, SERVER_NAME);
+        res.set(beast::http::field::content_type, "text/html");
+        res.keep_alive(req.keep_alive());
+        res.body() = body.str();
+        session.sendResponse(res);
     } else {
         beast::http::response<beast::http::string_body> res{beast::http::status::not_found, req.version()};
         res.set(beast::http::field::server, SERVER_NAME);
