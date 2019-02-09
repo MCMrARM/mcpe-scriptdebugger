@@ -38,7 +38,7 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
     } else if (url == "/json" || url == "/json/list" || url == "/json/version") {
         nlohmann::json val;
         if (req.target() == "/json/version") {
-            val["Browser"] = "node.js/v10.15.1";
+            val["Browser"] = "Minecraft";
             val["Protocol-Version"] = "1.1";
         } else {
             val = nlohmann::json::array();
