@@ -70,3 +70,18 @@ void InspectorManager::quitMessageLoopOnPause() {
     // same thread
     runMessageLoopBool = false;
 }
+
+void InspectorManager::waitForDebugger() {
+    runMessageLoopOnPause(-1);
+}
+
+void InspectorManager::runIfWaitingForDebugger(int contextGroupId) {
+    // same thread
+    runMessageLoopBool = false;
+}
+
+void InspectorManager::pauseOnNextStatement() {
+    std::lock_guard<std::mutex> lck (channelsMutex);
+    for (auto const& channel : channels)
+        channel->getSession()->schedulePauseOnNextStatement(v8_inspector::StringView(), v8_inspector::StringView());
+}

@@ -37,6 +37,10 @@ public:
         this->session = std::move(session);
     }
 
+    v8_inspector::V8InspectorSession* getSession() {
+        return this->session.get();
+    }
+
     void setPostMessageCallback(std::function<void ()> cb) {
         postMessageCb = std::move(cb);
     }

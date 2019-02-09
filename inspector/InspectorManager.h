@@ -27,6 +27,8 @@ protected:
 
     void quitMessageLoopOnPause() override;
 
+    void runIfWaitingForDebugger(int contextGroupId) override;
+
 public:
     static InspectorManager instance;
 
@@ -35,6 +37,10 @@ public:
     void finalize(v8::Isolate* isolate, v8::Local<v8::Context> context);
 
     void update();
+
+    void waitForDebugger();
+
+    void pauseOnNextStatement();
 
 
     void onConnectionOpened(InspectorWebSocketSession& channel);

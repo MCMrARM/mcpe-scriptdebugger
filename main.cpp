@@ -2,6 +2,7 @@
 #include "statichook.h"
 #include "inspector/InspectorServer.h"
 #include "inspector/InspectorManager.h"
+#include "minecraft/Keyboard.h"
 
 extern "C" void* mcpelauncher_hook(void* symbol, void* hook, void** original) { return nullptr; }
 
@@ -16,6 +17,7 @@ namespace ScriptApi {
         v8::Persistent<v8::Context> context; // 0x50
         char filler2[0x7C - 0x50];
         InspectorServer::InspectorManager inspectorManager;
+        bool waitForDebugger;
     };
     struct ScriptFramework {
         int filler;
@@ -31,6 +33,7 @@ InspectorServer::InspectorServer inspectorServer;
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterfaceC2Ev, ScriptApi::V8CoreInterface) {
     original(this);
     new (&inspectorManager)InspectorServer::InspectorManager;
+    waitForDebugger = false;
 }
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterfaceD2Ev, ScriptApi::V8CoreInterface) {
     if (isolate) {
@@ -52,6 +55,8 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface10initializeERNS_12ScriptRepor
         inspectorServer.addInspector("server", &inspectorManager);
     else
         inspectorServer.addInspector("client", &inspectorManager);
+    if (Keyboard::_states[17]) // ctrl
+        inspectorManager.waitForDebugger();
 }
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface8shutdownERNS_12ScriptReportE, ScriptApi::V8CoreInterface, void* report) {
     {
@@ -62,14 +67,23 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface8shutdownERNS_12ScriptReportE,
 }
 TInstanceHook(void, _ZN12ScriptEngine6updateEv, ScriptEngine) {
     original(this);
+    v8::HandleScope handleScope (core->isolate);
     core->inspectorManager.update();
 }
 
+static thread_local ScriptApi::V8CoreInterface* currentInterface;
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface9runScriptERKSsS2_RNS_12ScriptReportE, ScriptApi::V8CoreInterface, std::string const& a, std::string const& b, void* c) {
     // Remove the hash from the filename end
     auto iof = a.rfind('_');
     auto as = a.substr(0, iof);
+    currentInterface = this;
     original(this, as, b, c);
+    currentInterface = nullptr;
+}
+TClasslessInstanceHook(v8::Local<v8::Value>, _ZN2v86Script3RunENS_5LocalINS_7ContextEEE, v8::Local<v8::Context> ctx) {
+    if (currentInterface)
+        currentInterface->inspectorManager.pauseOnNextStatement();
+    return original(this, std::move(ctx));
 }
 
 
@@ -78,12 +92,12 @@ extern "C" void mod_init() {
     unsigned char* s = &((unsigned char*) sym)[0x22 + 3];
     if (*(int*) s != 0x7C)
         throw std::runtime_error("V8CoreInterface size changed");
-    *((int*) s) += sizeof(InspectorServer::InspectorManager);
+    *((int*) s) = sizeof(ScriptApi::V8CoreInterface);
 
     sym = dlsym(MinecraftHandle(), "_ZN12ScriptEngine15ScriptQueueDataC2ERKSsS2_S2_S2_");
     s =  &((unsigned char*) sym)[0x5C];
     s[0] = 0xB8;
-    const char* replacementStr = "(function() {";
+    const char* replacementStr = "(function() { ";
     *((size_t*) &s[1]) = (size_t) replacementStr;
     s[5] = 0x90;
     s[7] = (unsigned char) strlen(replacementStr);
