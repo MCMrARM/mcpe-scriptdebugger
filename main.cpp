@@ -1,8 +1,11 @@
+#include "main.h"
 #include "statichook.h"
 #include "inspector/InspectorServer.h"
 #include "inspector/InspectorManager.h"
 
 extern "C" void* mcpelauncher_hook(void* symbol, void* hook, void** original) { return nullptr; }
+
+MinecraftGame* minecraftGame;
 
 bool ON_SERVER_THREAD();
 
@@ -79,4 +82,8 @@ extern "C" void mod_init() {
     s[7] = (unsigned char) strlen(replacementStr);
 
     inspectorServer.start(4242);
+}
+
+extern "C" void mod_set_minecraft(MinecraftGame* game) {
+    minecraftGame = game;
 }
