@@ -51,13 +51,28 @@ TInstanceHook(void, _ZN12ScriptEngine6updateEv, ScriptEngine) {
     core->inspectorManager.update();
 }
 
+TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface9runScriptERKSsS2_RNS_12ScriptReportE, ScriptApi::V8CoreInterface, std::string const& a, std::string const& b, void* c) {
+    // Remove the hash from the filename end
+    auto iof = a.rfind('_');
+    auto as = a.substr(0, iof);
+    original(this, as, b, c);
+}
+
 
 extern "C" void mod_init() {
     void* sym = dlsym(MinecraftHandle(), "_ZN9ScriptApi15ScriptFrameworkC2Ev");
-    const char* s = &((const char*) sym)[0x22 + 3];
+    unsigned char* s = &((unsigned char*) sym)[0x22 + 3];
     if (*(int*) s != 0x7C)
         throw std::runtime_error("V8CoreInterface size changed");
     *((int*) s) += sizeof(InspectorServer::InspectorManager);
+
+    sym = dlsym(MinecraftHandle(), "_ZN12ScriptEngine15ScriptQueueDataC2ERKSsS2_S2_S2_");
+    s =  &((unsigned char*) sym)[0x5C];
+    s[0] = 0xB8;
+    const char* replacementStr = "(function() {";
+    *((size_t*) &s[1]) = (size_t) replacementStr;
+    s[5] = 0x90;
+    s[7] = (unsigned char) strlen(replacementStr);
 
     inspectorServer.start(4242);
 }
