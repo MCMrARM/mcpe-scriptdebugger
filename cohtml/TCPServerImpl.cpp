@@ -61,9 +61,12 @@ void TCPServerImpl::Update() {
             listener.OnConnectionFailed(fd);
             clients.erase(fd);
             continue;
-        }
-        if (n == 0)
+        } else if (n == 0) {
+            Log::trace("CohtmlTcpServerImpl", "Connection closed (%i)", fd);
+            listener.OnConnectionFailed(fd);
+            clients.erase(fd);
             continue;
+        }
         listener.OnReadData(fd, buf, (unsigned int) n, false);
     }
 }

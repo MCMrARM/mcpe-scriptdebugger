@@ -51,7 +51,8 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterfaceD2Ev, ScriptApi::V8CoreInterfa
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface10initializeERNS_12ScriptReportE, ScriptApi::V8CoreInterface, void* report) {
     original(this, report);
     v8::HandleScope handleScope (isolate);
-    inspectorManager.init(isolate, context.Get(isolate));
+    auto context = this->context.Get(isolate);
+    inspectorManager.init(isolate, context);
     if (ON_SERVER_THREAD())
         inspectorServer.addInspector("server", &inspectorManager);
     else
