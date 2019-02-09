@@ -32,6 +32,8 @@ public:
 
     void init(v8::Isolate* isolate, v8::Local<v8::Context> context);
 
+    void finalize(v8::Isolate* isolate, v8::Local<v8::Context> context);
+
     void update();
 
 

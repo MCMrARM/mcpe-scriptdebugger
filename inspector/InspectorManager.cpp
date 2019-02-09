@@ -4,6 +4,7 @@
 
 using namespace InspectorServer;
 
+
 void InspectorManager::init(v8::Isolate *isolate, v8::Local<v8::Context> context) {
     if (inspector)
         throw std::runtime_error("InspectorManager already initialized");
@@ -11,6 +12,17 @@ void InspectorManager::init(v8::Isolate *isolate, v8::Local<v8::Context> context
     const char* namec = "Primary Context";
     v8_inspector::StringView name((unsigned char*) namec, strlen(namec));
     inspector->contextCreated(v8_inspector::V8ContextInfo(context, 1, name));
+}
+
+void InspectorManager::finalize(v8::Isolate *isolate, v8::Local<v8::Context> context) {
+    std::set<InspectorWebSocketSession*> channels;
+    {
+        std::lock_guard<std::mutex> lck(channelsMutex);
+        channels = std::move(this->channels);
+    }
+    channels.clear();
+    inspector->contextDestroyed(context);
+    inspector.reset();
 }
 
 void InspectorManager::onConnectionOpened(InspectorWebSocketSession &channel) {

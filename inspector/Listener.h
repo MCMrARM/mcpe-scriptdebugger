@@ -25,6 +25,8 @@ private:
 public:
     Listener(HttpSessionHandler& httpSessionHandler);
 
+    ~Listener();
+
     void start(unsigned short port);
 
 };

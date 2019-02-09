@@ -11,6 +11,11 @@ Listener::Listener(HttpSessionHandler& httpSessionHandler) : tcpAcceptor(ioConte
                                                              httpSessionHandler(httpSessionHandler) {
 }
 
+Listener::~Listener() {
+    ioContext.stop();
+    ioThread.join();
+}
+
 void Listener::start(unsigned short port) {
     auto guard = boost::asio::make_work_guard(ioContext);
     ioThread = std::thread([this]() {

@@ -30,11 +30,15 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterfaceC2Ev, ScriptApi::V8CoreInterfa
     new (&inspectorManager)InspectorServer::InspectorManager;
 }
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterfaceD2Ev, ScriptApi::V8CoreInterface) {
-    if (ON_SERVER_THREAD())
-        inspectorServer.removeInspector("server");
-    else
-        inspectorServer.removeInspector("client");
-    inspectorManager.~InspectorManager();
+    if (isolate) {
+        v8::HandleScope handleScope(isolate);
+        if (ON_SERVER_THREAD())
+            inspectorServer.removeInspector("server");
+        else
+            inspectorServer.removeInspector("client");
+        inspectorManager.finalize(isolate, context.Get(isolate));
+        inspectorManager.~InspectorManager();
+    }
     original(this);
 }
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface10initializeERNS_12ScriptReportE, ScriptApi::V8CoreInterface, void* report) {
