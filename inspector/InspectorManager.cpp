@@ -15,12 +15,12 @@ void InspectorManager::init(v8::Isolate *isolate, v8::Local<v8::Context> context
 }
 
 void InspectorManager::finalize(v8::Isolate *isolate, v8::Local<v8::Context> context) {
-    std::set<InspectorWebSocketSession*> channels;
     {
         std::lock_guard<std::mutex> lck(channelsMutex);
-        channels = std::move(this->channels);
+        for (auto chan : channels)
+            chan->setSession(nullptr);
+        channels.clear();
     }
-    channels.clear();
     inspector->contextDestroyed(context);
     inspector.reset();
 }
