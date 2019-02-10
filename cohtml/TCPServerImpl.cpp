@@ -52,31 +52,33 @@ void TCPServerImpl::Update() {
         }
     }
     char buf[1024 * 16];
-    for (auto& cd : clients) {
-        int fd = cd.first;
+    for (auto cd = clients.begin(); cd != clients.end(); ) {
+        int fd = cd->first;
         ssize_t n = read(fd, buf, sizeof(buf));
         if (n < 0) {
             if (errno != EAGAIN) {
                 Log::trace("CohtmlTcpServerImpl", "Connection dropped (%i)", fd);
                 listener.OnConnectionFailed(fd);
-                clients.erase(fd);
                 close(fd);
+                cd = clients.erase(cd);
                 continue;
             }
         } else if (n == 0) {
             Log::trace("CohtmlTcpServerImpl", "Connection closed (%i)", fd);
             listener.OnConnectionFailed(fd);
-            clients.erase(fd);
             close(fd);
+            cd = clients.erase(cd);
             continue;
         } else {
             listener.OnReadData(fd, buf, (unsigned int) n, false);
         }
-        auto& ci = cd.second;
+        auto& ci = cd->second;
         if (ci.sendbuf.size() > ci.sendbufOff) {
             ssize_t res = WriteWithCheck(fd, &ci.sendbuf[ci.sendbufOff], ci.sendbuf.size() - ci.sendbufOff);
-            if (res < 0)
+            if (res < 0) {
+                cd = clients.erase(cd);
                 continue;
+            }
             ci.sendbufOff += res;
             if (ci.sendbufOff > 1024) {
                 ci.sendbuf.erase(ci.sendbuf.begin(), ci.sendbuf.begin() + ci.sendbufOff);
@@ -89,9 +91,11 @@ void TCPServerImpl::Update() {
             }
             if (ci.shouldClose) {
                 close(fd);
-                clients.erase(fd);
+                cd = clients.erase(cd);
+                continue;
             }
         }
+        cd++;
     }
 }
 
@@ -103,7 +107,7 @@ ssize_t TCPServerImpl::WriteWithCheck(int fd, const char *data, size_t len) {
         } else {
             Log::trace("CohtmlTcpServerImpl", "Connection dropped on write (%i)", fd);
             listener.OnConnectionFailed(fd);
-            clients.erase(fd);
+            close(fd);
             return -1;
         }
     }
@@ -115,8 +119,10 @@ void TCPServerImpl::SendData(int fd, const char *data, size_t len) {
     ssize_t res = 0;
     if (client.sendbuf.size() == client.sendbufOff) {
         res = WriteWithCheck(fd, data, len);
-        if (res < 0)
+        if (res < 0) {
+            clients.erase(fd);
             return;
+        }
     }
     if (res > 0)
         client.sendbuf.insert(client.sendbuf.end(), data + res, data + len);
