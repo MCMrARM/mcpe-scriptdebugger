@@ -16,7 +16,9 @@ namespace ScriptApi {
         char filler[0x48];
         v8::Isolate *isolate; // 0x4C
         v8::Persistent<v8::Context> context; // 0x50
-        char filler2[0x7C - 0x50];
+        int filler2; // 0x54
+        std::unordered_map<std::string, v8::ScriptOrigin> origins; // 0x70
+        char filler3[0x7C - 0x70];
         InspectorServer::InspectorManager inspectorManager;
         bool waitForDebugger;
     };
@@ -68,6 +70,7 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface8shutdownERNS_12ScriptReportE,
         else
             inspectorServer.removeInspector("client");
         inspectorManager.finalize(isolate, context.Get(isolate));
+        origins.clear();
     }
     original(this, report);
 }
