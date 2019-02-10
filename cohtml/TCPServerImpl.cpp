@@ -48,36 +48,83 @@ void TCPServerImpl::Update() {
             Log::trace("CohtmlTcpServerImpl", "Connection opened (%i)", fd);
             listener.OnConnectionAccepted(fd);
             fcntl(fd, F_SETFL, O_NONBLOCK);
-            clients.insert(fd);
+            clients.insert({fd, ClientInfo()});
         }
     }
     char buf[1024 * 16];
-    for (int fd : clients) {
+    for (auto& cd : clients) {
+        int fd = cd.first;
         ssize_t n = read(fd, buf, sizeof(buf));
         if (n < 0) {
-            if (errno == EAGAIN)
+            if (errno != EAGAIN) {
+                Log::trace("CohtmlTcpServerImpl", "Connection dropped (%i)", fd);
+                listener.OnConnectionFailed(fd);
+                clients.erase(fd);
+                close(fd);
                 continue;
-            Log::trace("CohtmlTcpServerImpl", "Connection dropped (%i)", fd);
-            listener.OnConnectionFailed(fd);
-            clients.erase(fd);
-            continue;
+            }
         } else if (n == 0) {
             Log::trace("CohtmlTcpServerImpl", "Connection closed (%i)", fd);
             listener.OnConnectionFailed(fd);
             clients.erase(fd);
+            close(fd);
             continue;
+        } else {
+            listener.OnReadData(fd, buf, (unsigned int) n, false);
         }
-        listener.OnReadData(fd, buf, (unsigned int) n, false);
+        auto& ci = cd.second;
+        if (ci.sendbuf.size() > ci.sendbufOff) {
+            ssize_t res = WriteWithCheck(fd, &ci.sendbuf[ci.sendbufOff], ci.sendbuf.size() - ci.sendbufOff);
+            if (res < 0)
+                continue;
+            ci.sendbufOff += res;
+            if (ci.sendbufOff > 1024) {
+                ci.sendbuf.erase(ci.sendbuf.begin(), ci.sendbuf.begin() + ci.sendbufOff);
+                ci.sendbufOff = 0;
+            }
+        } else {
+            if (ci.sendbufOff != 0) {
+                ci.sendbuf.clear();
+                ci.sendbufOff = 0;
+            }
+            if (ci.shouldClose) {
+                close(fd);
+                clients.erase(fd);
+            }
+        }
     }
+}
+
+ssize_t TCPServerImpl::WriteWithCheck(int fd, const char *data, size_t len) {
+    ssize_t res = write(fd, data, len);
+    if (res < 0) {
+        if (errno == EAGAIN) {
+            return 0;
+        } else {
+            Log::trace("CohtmlTcpServerImpl", "Connection dropped on write (%i)", fd);
+            listener.OnConnectionFailed(fd);
+            clients.erase(fd);
+            return -1;
+        }
+    }
+    return res;
 }
 
 void TCPServerImpl::SendData(int fd, const char *data, size_t len) {
-    write(fd, data, len);
+    auto& client = clients.at(fd);
+    ssize_t res = 0;
+    if (client.sendbuf.size() == client.sendbufOff) {
+        res = WriteWithCheck(fd, data, len);
+        if (res < 0)
+            return;
+    }
+    if (res > 0)
+        client.sendbuf.insert(client.sendbuf.end(), data + res, data + len);
 }
 
 void TCPServerImpl::CloseConnection(int fd) {
-    if (clients.count(fd) > 0) {
-        close(fd);
-        clients.erase(fd);
-    }
+    Log::trace("CohtmlTcpServerImpl", "Closing remote connection (%i)", fd);
+    auto client = clients.find(fd);
+    if (client != clients.end())
+        client->second.shouldClose = true;
 }
