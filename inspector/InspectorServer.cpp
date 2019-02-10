@@ -45,7 +45,10 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
             std::lock_guard<std::mutex> lck(inspectorManagersMutex);
             for (auto const& inspector : inspectorManagers) {
                 nlohmann::json e;
-                std::string wsUrl = "127.0.0.1:" + std::to_string(port) + "/inspector/" + inspector.first;
+                std::string host = std::string(req.base()["host"]);
+                if (host.empty())
+                    host = "127.0.0.1:" + std::to_string(port);
+                std::string wsUrl = host + "/inspector/" + inspector.first;
                 e["description"] = "Minecraft script engine";
                 e["devtoolsFrontendUrl"] = "chrome-devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=" + wsUrl;
                 e["devtoolsFrontendUrlCompat"] = "chrome-devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=" + wsUrl;
@@ -73,7 +76,10 @@ void ::InspectorServer::InspectorServer::onRequest(HttpSession &session,
         {
             std::lock_guard<std::mutex> lck(inspectorManagersMutex);
             for (auto const& inspector : inspectorManagers) {
-                std::string wsUrl = "127.0.0.1:" + std::to_string(port) + "/inspector/" + inspector.first;
+                std::string host = std::string(req.base()["host"]);
+                if (host.empty())
+                    host = "127.0.0.1:" + std::to_string(port);
+                std::string wsUrl = host + "/inspector/" + inspector.first;
                 std::string devtoolsUrlBase = "chrome-devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=";
                 body << "<li>" << devtoolsUrlBase << "<strong>" << wsUrl << "</strong>" << "</li>";
             }
