@@ -63,6 +63,10 @@ TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface10initializeERNS_12ScriptRepor
 TInstanceHook(void, _ZN9ScriptApi15V8CoreInterface8shutdownERNS_12ScriptReportE, ScriptApi::V8CoreInterface, void* report) {
     {
         v8::HandleScope handleScope (isolate);
+        if (ON_SERVER_THREAD())
+            inspectorServer.removeInspector("server");
+        else
+            inspectorServer.removeInspector("client");
         inspectorManager.finalize(isolate, context.Get(isolate));
     }
     original(this, report);

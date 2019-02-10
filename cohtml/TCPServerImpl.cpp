@@ -46,8 +46,8 @@ void TCPServerImpl::Update() {
             }
         } else {
             Log::trace("CohtmlTcpServerImpl", "Connection opened (%i)", fd);
-            listener.OnConnectionAccepted(fd);
             fcntl(fd, F_SETFL, O_NONBLOCK);
+            listener.OnConnectionAccepted(fd);
             clients.insert({fd, ClientInfo()});
         }
     }
@@ -96,7 +96,7 @@ void TCPServerImpl::Update() {
 }
 
 ssize_t TCPServerImpl::WriteWithCheck(int fd, const char *data, size_t len) {
-    ssize_t res = write(fd, data, len);
+    ssize_t res = send(fd, data, len, MSG_NOSIGNAL);
     if (res < 0) {
         if (errno == EAGAIN) {
             return 0;
